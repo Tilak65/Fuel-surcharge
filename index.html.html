@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuel Surcharge Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        .shimmer {
+            animation: pulse-shimmer 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+    <div id="app" class="p-4 sm:p-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl mb-4 shadow-lg">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-4xl font-bold text-white mb-2">Fuel Surcharge Tracker</h1>
+                <p class="text-slate-400">Track your surcharges towards the target</p>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 mb-6 border border-slate-700/50 shadow-2xl">
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div class="text-center">
+                        <p class="text-slate-400 text-sm mb-2 uppercase tracking-wider">Current Total</p>
+                        <p class="text-4xl font-bold text-white" id="total">₹0.00</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-slate-400 text-sm mb-2 uppercase tracking-wider">Target</p>
+                        <p class="text-4xl font-bold text-amber-500">₹3500</p>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-slate-400 text-sm font-medium">Progress</span>
+                        <span class="text-white text-sm font-bold" id="progress-percent">0.0%</span>
+                    </div>
+                    <div class="h-4 bg-slate-700/50 rounded-full overflow-hidden shadow-inner">
+                        <div id="progress-bar" class="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 transition-all duration-700 ease-out relative overflow-hidden" style="width: 0%">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent shimmer"></div>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm mt-2 text-right" id="remaining">₹3500.00 remaining</p>
+                </div>
+            </div>
+
+            <!-- Add Entry Card -->
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 mb-6 border border-slate-700/50 shadow-2xl">
+                <h2 class="text-xl font-semibold text-white mb-4">Add Surcharge</h2>
+                <div class="flex gap-3">
+                    <div class="flex-1 relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">₹</span>
+                        <input
+                            type="number"
+                            id="amount-input"
+                            value="5"
+                            placeholder="Enter amount"
+                            class="w-full bg-slate-700/50 text-white rounded-xl px-4 pl-9 py-3 border border-slate-600/50 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+                            step="0.01"
+                            min="0"
+                        />
+                    </div>
+                    <button
+                        id="add-btn"
+                        class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-amber-500/25 flex items-center gap-2"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Entries List -->
+            <div id="entries-container" class="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 border border-slate-700/50 shadow-2xl hidden">
+                <h2 class="text-xl font-semibold text-white mb-4">Recent Entries</h2>
+                <div id="entries-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-12">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-800 rounded-2xl mb-4">
+                    <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
+                    </svg>
+                </div>
+                <p class="text-slate-400">No entries yet. Add your first surcharge above.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TARGET = 3500;
+        let entries = [];
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('fuelSurchargeData');
+            if (saved) {
+                entries = JSON.parse(saved);
+            }
+            updateUI();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('fuelSurchargeData', JSON.stringify(entries));
+        }
+
+        // Calculate total
+        function getTotal() {
+            return entries.reduce((sum, entry) => sum + entry.amount, 0);
+        }
+
+        // Format date as hh:mm:ss dd/mm/yy
+        function formatDate(date) {
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const yy = String(date.getFullYear()).slice(-2);
+            const hh = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const ss = String(date.getSeconds()).padStart(2, '0');
+            return `${hh}:${min}:${ss} ${dd}/${mm}/${yy}`;
+        }
+
+        // Add entry
+        function addEntry() {
+            const input = document.getElementById('amount-input');
+            const value = parseFloat(input.value);
+            
+            if (isNaN(value) || value <= 0) return;
+
+            const newEntry = {
+                id: Date.now(),
+                amount: value,
+                date: formatDate(new Date())
+            };
+
+            entries.unshift(newEntry);
+            saveData();
+            updateUI();
+            input.value = '5';
+        }
+
+        // Delete entry
+        function deleteEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            saveData();
+            updateUI();
+        }
+
+        // Update UI
+        function updateUI() {
+            const total = getTotal();
+            const progress = Math.min((total / TARGET) * 100, 100);
+            const remaining = TARGET - total;
+
+            // Update stats
+            document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+            document.getElementById('progress-percent').textContent = `${progress.toFixed(1)}%`;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('remaining').textContent = `₹${remaining.toFixed(2)} remaining`;
+
+            // Update entries list
+            const entriesList = document.getElementById('entries-list');
+            const entriesContainer = document.getElementById('entries-container');
+            const emptyState = document.getElementById('empty-state');
+
+            if (entries.length > 0) {
+                entriesContainer.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                
+                entriesList.innerHTML = entries.map(entry => `
+                    <div class="flex items-center justify-between bg-slate-700/30 rounded-xl p-4 hover:bg-slate-700/50 transition-all group">
+                        <div>
+                            <p class="text-white font-semibold text-lg">₹${entry.amount.toFixed(2)}</p>
+                            <p class="text-slate-400 text-sm">${entry.date}</p>
+                        </div>
+                        <button
+                            onclick="deleteEntry(${entry.id})"
+                            class="text-slate-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                entriesContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('add-btn').addEventListener('click', addEntry);
+        document.getElementById('amount-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addEntry();
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
