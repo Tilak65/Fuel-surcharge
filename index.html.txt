@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Fuel Surcharge Tracker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #8b5cf6;
+      --background: #0f0f1e;
+      --surface: #1a1a2e;
+      --surface-light: #25254d;
+      --text: #ffffff;
+      --text-secondary: #a0a0c0;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: rgba(99, 102, 241, 0.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, var(--background) 0%, #16213e 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      padding-bottom: 100px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 30px 0;
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: 2.2em;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 5px;
+    }
+
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.9em;
+      font-weight: 400;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid rgba(99, 102, 241, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:active {
+      transform: scale(0.98);
+    }
+
+    .stat-value {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: var(--primary);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.75em;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .add-section {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 8px 32px var(--shadow);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.85em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: var(--surface-light);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text);
+      font-size: 1em;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+
+    .btn-primary:active {
+      transform: translateY(2px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .entries-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .entries-header h2 {
+      font-size: 1.3em;
+      font-weight: 600;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+
+    .filter-tab {
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 2px solid transparent;
+      border-radius: 20px;
+      font-size: 0.85em;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .filter-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .entries-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .entry-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(99, 102, 241, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .entry-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--primary);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .entry-card:active::before {
+      opacity: 1;
+    }
+
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .entry-title {
+      font-size: 1.1em;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .entry-amount {
+      font-size: 1.3em;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .entry-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .entry-detail {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85em;
+      color: var(--text-secondary);
+    }
+
+    .entry-notes {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .entry-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-delete:active {
+      background: var(--danger);
+      color: white;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 4em;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 1.2em;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(26, 26, 46, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: space-around;
+      border-top: 1px solid rgba(99, 102, 241, 0.2);
+      z-index: 1000;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      font-size: 0.75em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 8px 16px;
+      border-radius: 12px;
+    }
+
+    .nav-item:active {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    .nav-icon {
+      font-size: 1.6em;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 100%;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .modal-header {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .loading {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 600px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .stats-grid {
+        gap: 8px;
+      }
+
+      .stat-card {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="header">
+      <h1>⛽ Fuel Surcharge</h1>
+      <div class="subtitle">Track every charge effortlessly</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value" id="totalCount">0</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="thisMonth">0</span>
+        <span class="stat-label">This Month</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="totalAmount">₹0</span>
+        <span class="stat-label">Amount</span>
+      </div>
+    </div>
+
+    <div class="add-section">
+      <div class="input-group">
+        <label>Description</label>
+        <input type="text" id="description" placeholder="e.g., Trip to Mumbai">
+      </div>
+      
+      <div class="input-group">
+        <label>Amount (₹)</label>
+        <input type="number" id="amount" placeholder="0" step="0.01">
+      </div>
+
+      <div class="input-group">
+        <label>Vehicle/Route</label>
+        <input type="text" id="vehicle" placeholder="e.g., Truck #123">
+      </div>
+
+      <div class="input-group">
+        <label>Notes (Optional)</label>
+        <textarea id="notes" placeholder="Additional details..."></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="addEntry()">
+        <span>➕</span>
+        <span>Add Surcharge</span>
+      </button>
+    </div>
+
+    <div class="entries-header">
+      <h2>Recent Entries</h2>
+      <span id="filterLabel" style="color: var(--text-secondary); font-size: 0.85em;">All Time</span>
+    </div>
+
+    <div class="filter-tabs">
+      <div class="filter-tab active" onclick="filterEntries('all')">All</div>
+      <div class="filter-tab" onclick="filterEntries('today')">Today</div>
+      <div class="filter-tab" onclick="filterEntries('week')">This Week</div>
+      <div class="filter-tab" onclick="filterEntries('month')">This Month</div>
+    </div>
+
+    <div class="entries-list" id="entriesList">
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <h3>No entries yet</h3>
+        <p>Add your first fuel surcharge above</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">🏠</div>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" onclick="showExportModal()">
+      <div class="nav-icon">📤</div>
+      <span>Export</span>
+    </div>
+    <div class="nav-item" onclick="showImportModal()">
+      <div class="nav-icon">📥</div>
+      <span>Import</span>
+    </div>
+    <div class="nav-item" onclick="clearAllData()">
+      <div class="nav-icon">🗑️</div>
+      <span>Clear</span>
+    </div>
+  </div>
+
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <div class="modal-header">Export Data</div>
+      <p style="margin-bottom: 20px; color: var(--text-secondary); text-align: center;">
+        Copy this text and save it somewhere safe
+      </p>
+      <textarea id="exportData" style="height: 200px; margin-bottom: 15px;" readonly></textarea>
+      <button class="btn btn-primary" onclick="copyExportData()">📋 Copy to Clipboard</button>
+      <button class="btn" style="background: var(--surface-light); color: var(--text); margin-top: 10px;" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">Import Data</div>
+      <p style="margin-bottom: 20px; color: var(--text-secondary); text-align: center;">
+        Paste your exported data below
+      </p>
+      <textarea id="importData" style="height: 200px; margin-bottom: 15px;" placeholder="Paste exported data here..."></textarea>
+      <button class="btn btn-primary" onclick="importData()">📥 Import</button>
+      <button class="btn" style="background: var(--surface-light); color: var(--text); margin-top: 10px;" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    let entries = [];
+    let currentFilter = 'all';
+
+    function init() {
+      loadEntries();
+      renderEntries();
+      updateStats();
+    }
+
+    function loadEntries() {
+      const stored = localStorage.getItem('fuelEntries');
+      if (stored) {
+        entries = JSON.parse(stored);
+      }
+    }
+
+    function saveEntries() {
+      localStorage.setItem('fuelEntries', JSON.stringify(entries));
+    }
+
+    function addEntry() {
+      const description = document.getElementById('description').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value) || 0;
+      const vehicle = document.getElementById('vehicle').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+
+      if (!description || amount <= 0) {
+        alert('Please enter a description and amount');
+        return;
+      }
+
+      const entry = {
+        id: Date.now(),
+        description,
+        amount,
+        vehicle,
+        notes,
+        date: new Date().toISOString()
+      };
+
+      entries.unshift(entry);
+      saveEntries();
+      
+      document.getElementById('description').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('vehicle').value = '';
+      document.getElementById('notes').value = '';
+
+      renderEntries();
+      updateStats();
+    }
+
+    function deleteEntry(id) {
+      if (!confirm('Delete this entry?')) return;
+      
+      entries = entries.filter(e => e.id !== id);
+      saveEntries();
+      renderEntries();
+      updateStats();
+    }
+
+    function filterEntries(filter) {
+      currentFilter = filter;
+      
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      renderEntries();
+    }
+
+    function getFilteredEntries() {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      return entries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        switch(currentFilter) {
+          case 'today':
+            return entryDate >= today;
+          case 'week':
+            return entryDate >= weekAgo;
+          case 'month':
+            return entryDate >= monthStart;
+          default:
+            return true;
+        }
+      });
+    }
+
+    function renderEntries() {
+      const list = document.getElementById('entriesList');
+      const filtered = getFilteredEntries();
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>No entries found</h3>
+            <p>Try changing the filter or add a new entry</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = filtered.map(entry => {
+        const date = new Date(entry.date);
+        const dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+          <div class="entry-card fade-in">
+            <div class="entry-header">
+              <div>
+                <div class="entry-title">${entry.description}</div>
+              </div>
+              <div class="entry-amount">₹${entry.amount.toFixed(2)}</div>
+            </div>
+            
+            <div class="entry-details">
+              ${entry.vehicle ? `<div class="entry-detail">🚛 ${entry.vehicle}</div>` : ''}
+              <div class="entry-detail">📅 ${dateStr}</div>
+              <div class="entry-detail">🕐 ${timeStr}</div>
+            </div>
+            
+            ${entry.notes ? `<div class="entry-notes">${entry.notes}</div>` : ''}
+            
+            <div class="entry-actions">
+              <button class="btn-small btn-delete" onclick="deleteEntry(${entry.id})">
+                <span>🗑️</span>
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateStats() {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const thisMonth = entries.filter(e => new Date(e.date) >= monthStart);
+      const totalAmount = entries.reduce((sum, e) => sum + e.amount, 0);
+
+      document.getElementById('totalCount').textContent = entries.length;
+      document.getElementById('thisMonth').textContent = thisMonth.length;
+      document.getElementById('totalAmount').textContent = '₹' + totalAmount.toFixed(0);
+    }
+
+    function showExportModal() {
+      const data = JSON.stringify(entries, null, 2);
+      document.getElementById('exportData').value = data;
+      document.getElementById('exportModal').classList.add('show');
+    }
+
+    function showImportModal() {
+      document.getElementById('importModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+      document.getElementById('importData').value = '';
+    }
+
+    function copyExportData() {
+      const textarea = document.getElementById('exportData');
+      textarea.select();
+      document.execCommand('copy');
+      alert('Data copied to clipboard!');
+    }
+
+    function importData() {
+      const data = document.getElementById('importData').value.trim();
+      if (!data) {
+        alert('Please paste data to import');
+        return;
+      }
+
+      try {
+        const imported = JSON.parse(data);
+        if (!Array.isArray(imported)) throw new Error('Invalid format');
+        
+        entries = imported;
+        saveEntries();
+        renderEntries();
+        updateStats();
+        closeModal();
+        alert('Data imported successfully!');
+      } catch (e) {
+        alert('Invalid data format. Please check and try again.');
+      }
+    }
+
+    function clearAllData() {
+      if (!confirm('Are you sure you want to delete ALL entries? This cannot be undone!')) return;
+      if (!confirm('Really sure? This will delete everything!')) return;
+      
+      entries = [];
+      saveEntries();
+      renderEntries();
+      updateStats();
+      alert('All data cleared');
+    }
+
+    init();
+  </script>
+</body>
+</html>
